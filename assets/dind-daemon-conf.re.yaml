@@ -3,7 +3,7 @@ apiVersion: v1
 kind: ConfigMap
 metadata:
   name: codefresh-dind-config
-  namespace: {{ .Namespace }}
+  namespace: {{NAMESPACE}}
 data:
   daemon.json: |
     {

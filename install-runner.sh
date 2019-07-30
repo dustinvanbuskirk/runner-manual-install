@@ -57,6 +57,7 @@ SERVER_CERT_EXTRA_SANS="${SERVER_CERT_EXTRA_SANS}"
 
 NAMESPACE=${NAMESPACE:-default}
 
+export APP_NAME=venona
 DIR=$(dirname $0)
 TMPDIR=./tmp/codefresh/
 TMP_VALIDATE_RESPONSE_FILE=$TMPDIR/validate-response
@@ -146,7 +147,8 @@ SERVER_CERT_CN=${SERVER_CERT_CN:-"docker.codefresh.io"}
       --from-file=$SRV_TLS_KEY \
       --from-file=$SRV_TLS_CERT || fatal "Failed storing the generated certificates in Kubernetes!"
 
-###
+## Secrets
+export API_TOKEN_BASE64=$(echo -n ${API_TOKEN}|base64)
 
 ## Apply assets/*yml
 mkdir ${TMPDIR}manifests/
@@ -155,9 +157,9 @@ for ii in $(find ${DIR}/assets -type f -name "*.yaml")
 do
    echo -e "\nkubectl apply -f $ii"
    ASSET_YAML=${TMPDIR}manifests/$(basename $ii)
-   ${DIR}/template.sh -e ${TMP_VALIDATE_RESPONSE_FILE} $ii > ${ASSET_YAML}
+   ${DIR}/template.sh $ii > ${ASSET_YAML}
    # cat $ASSET_YAML
-   #kubectl apply -f $ASSET_YAML || fatal "failed to apply $ii "
+   kubectl apply -f $ASSET_YAML || fatal "failed to apply $ii "
 
    echo "-------"
 done
