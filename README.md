@@ -5,7 +5,7 @@ Installing the [Codefresh runner](https://codefresh.io/docs/docs/enterprise/code
 ## What you need 
 
 1. A computer with Linux that has bash/openssl/base64 installed
-1. [Codefresh CLI](https://codefresh-io.github.io/cli/) installed
+1. [Codefresh CLI](https://codefresh-io.github.io/cli/) installed (v0.30.0+)
 1. `kubectl` installed and with access to the Kubernetes cluster that will host the Codefresh runner
 
 ## Step 1 - Prepare your cluster
