@@ -16,13 +16,13 @@ First create a token that the runner will use for authentication (use any name y
 codefresh create token behind-the-firewall
 ```
 
-Not down the value. And export it as a variable
+Note down the value. And export it as a variable
 
 ```
 export API_TOKEN=5d4005badbb93850c1db7dsg345fggdfgcd7f71c6a246666182d
 ```
 
-Create a namespace in your cluster that will holde the Codefresh runner and give it the privilages you want. The easiest way is to use the `default` namespace and give admin access to Codefresh
+Create a namespace in your cluster that will hold the Codefresh runner and give it the privilages you want. The easiest way is to use the `default` namespace and give admin access to Codefresh.
 
 ```
 kubectl create clusterrolebinding default-admin --clusterrole cluster-admin --serviceaccount=default:default
@@ -32,7 +32,7 @@ kubectl create clusterrolebinding default-admin --clusterrole cluster-admin --se
 export NAMESPACE=default
 ```
 
-Add your cluster to Codefresh. Here we use the name `my-cluster`
+Add your cluster to Codefresh. Here we use the name `my-cluster` for the integration.
 
 ```
 codefresh create cluster my-cluster --namespace default --serviceaccount default --behind-firewall --kube-context my-gke-cluster-project-name
@@ -45,7 +45,7 @@ export CLUSTER_NAME=my-cluster
 
 ## Step 2 - Select Codefresh runner version
 
-Export the variables used in the manifests
+Export the variables used in the manifests. The manifests can be found in the `assets` folder.
 
 ```
 export APP_NAME=venona
@@ -71,7 +71,10 @@ chmod +x ./install-runner.sh
 ./install-runner.sh
 ```
 
-After installation is complete you will see your new runtime environment in Codefresh and can use it in your pipelines.
+After installation is complete you will see your new runtime environment in Codefresh and can use it in your pipelines. Please wait until all pods have finished their startup.
+
+You can use the command `kubectl get pods` to see the progress.
+
 The rendered manifests as they were applied are in `./tmp/codefresh/manifests`.
 
 
