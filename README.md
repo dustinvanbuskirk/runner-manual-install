@@ -78,3 +78,8 @@ You can use the command `kubectl get pods` to see the progress.
 The rendered manifests as they were applied are in `./tmp/codefresh/manifests`.
 
 
+# Helm Install
+
+## [1] Run register-runner.sh
+
+## [2] Deploy Chart

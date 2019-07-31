@@ -1,0 +1,21 @@
+HTTP/2 200 
+server: nginx/1.13.7
+date: Wed, 31 Jul 2019 22:01:14 GMT
+content-type: application/zip
+content-length: 2529
+x-powered-by: Express
+api_version: 6.86.0
+x-xss-protection: 1; mode=block
+vary: X-HTTP-Method-Override
+access-control-allow-origin: *
+access-control-allow-credentials: true
+access-control-allow-methods: GET,PUT,POST,DELETE
+access-control-allow-headers: Content-Type, Orion-Version, X-Requested-With, x-access-token
+content-disposition: attachment; filename="cf-certs.zip"
+accept-ranges: bytes
+cache-control: public, max-age=0
+last-modified: Wed, 31 Jul 2019 22:01:14 GMT
+etag: W/"9e1-16c4a0d3010"
+strict-transport-security: max-age=15724800; includeSubDomains;
+x-request-id: b5f0dfd14a766baef24426678a4b28ba
+

@@ -1,0 +1,56 @@
+apiVersion: extensions/v1beta1
+kind: Deployment
+metadata:
+  labels:
+    #app: {{APP_NAME}}
+    app: {{ template "fullname" . }}
+    #version: {{VERSION}}
+    version: {{ .Values.runner.image.tag | quote }}
+  #name: {{APP_NAME}}
+  name: {{ template "fullname" . }}
+  #namespace: {{NAMESPACE}}
+spec:
+  replicas: 1
+  revisionHistoryLimit: 5
+  strategy:
+    rollingUpdate:
+      maxSurge: 50%
+      maxUnavailable: 50%
+    type: RollingUpdate
+  template:
+    metadata:
+      labels:
+        #app: {{APP_NAME}}
+        app: {{ template "fullname" . }}
+        #version: {{VERSION}}
+        version: {{ .Values.runner.image.tag | quote }}
+    spec:
+      #serviceAccountName: {{APP_NAME}}
+      serviceAccountName: {{ template "fullname" . }}
+      containers:
+      - env:
+        - name: SELF_DEPLOYMENT_NAME
+          valueFrom:
+            fieldRef:
+              fieldPath: metadata.name
+        - name: CODEFRESH_TOKEN
+          valueFrom:
+            secretKeyRef:
+              #name: {{APP_NAME}}
+              name: {{ template "fullname" . }}
+              key: codefresh.token
+        - name: CODEFRESH_HOST
+          #value: {{API_HOST}}
+          value: {{ .Values.runner.api.host }}
+        - name: AGENT_MODE
+          #value: {{MODE}}
+          value: {{ .Values.runner.mode }}
+        - name: AGENT_NAME
+          #value: {{APP_NAME}}
+          value: {{ template "fullname" . }}
+        #image: {{IMAGE_NAME}}:{{IMAGE_TAG}}
+        image: {{ .Values.runner.image.repository }}-{{ .Values.runner.image.tag }}
+        imagePullPolicy: Always
+        #name: {{APP_NAME}}
+        name: {{ template "fullname" . }}
+      restartPolicy: Always

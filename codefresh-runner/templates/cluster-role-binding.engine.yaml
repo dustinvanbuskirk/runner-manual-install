@@ -1,0 +1,14 @@
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  #name: {{ .AppName }}-{{ .Namespace }}-engine
+  name: {{ template "fullname" . }}-engine
+subjects:
+- kind: ServiceAccount
+  #name: engine
+  name: {{ template "fullname" . }}-engine
+  #namespace: {{ .Namespace }}
+roleRef:
+  kind: ClusterRole
+  name: cluster-admin
+  apiGroup: rbac.authorization.k8s.io
