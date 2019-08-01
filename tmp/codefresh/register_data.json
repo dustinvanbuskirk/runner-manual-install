@@ -1,5 +1,0 @@
-{"clusterName": "docker-for-desktop",
-"namespace": "codefresh-runtime",
-"storageClassName": "dind-local-volumes-codefresh-runner",
-"agent": true
-}
