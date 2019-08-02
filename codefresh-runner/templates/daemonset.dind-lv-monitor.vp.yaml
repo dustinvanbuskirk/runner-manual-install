@@ -1,24 +1,20 @@
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
-  #name: dind-lv-monitor-{{APP_NAME}}
-  name: {{ template "fullname" . }}-dind-lv-monitor
-  #namespace: {{NAMESPACE}}
+  name: dind-lv-monitor-{{ .Values.app }}
+  namespace: {{ .Release.Namespace}}
   labels:
-    #app: dind-lv-monitor
-    app: {{ template "fullname" . }}-dind-lv-monitor
+    app: dind-lv-monitor
 spec:
   template:
     metadata:
       labels:
-        #app: dind-lv-monitor
-        app: {{ template "fullname" . }}-dind-lv-monitor
+        app: dind-lv-monitor
       annotations:
         prometheus_port: "9100"
         prometheus_scrape: "true"
     spec:
-      #serviceAccountName: volume-provisioner-{{APP_NAME}}
-      serviceAccountName: {{ template "fullname" . }}-volume-provisioner
+      serviceAccountName: volume-provisioner-{{ .Values.app }}
       # Debug:       
       # hostNetwork: true
       # nodeSelector:

@@ -2,12 +2,9 @@
 kind: StorageClass
 apiVersion: storage.k8s.io/v1
 metadata:
-  #name: dind-local-volumes-{{APP_NAME}}-{{NAMESPACE}}
-  name: {{ template "fullname" . }}-dind-local-volumes
+  name: dind-local-volumes-{{ .Values.app }}-{{ .Release.Namespace }}
   labels:
-    #app: dind-volume-provisioner
-    app: {{ template "fullname" . }}-dind-volume-provisioner
-#provisioner: codefresh.io/dind-volume-provisioner-{{APP_NAME}}-{{NAMESPACE}}
-provisioner: codefresh.io/{{ template "fullname" . }}-dind-volume-provisioner
+    app: dind-volume-provisioner
+provisioner: codefresh.io/dind-volume-provisioner-{{ .Values.app }}-{{ .Release.Namespace }}
 parameters:
   volumeBackend: local

@@ -136,7 +136,7 @@ echo -e "\n------------------\nRegistering Runtime ... "
 REGISTER_DATA=\
 "{\"clusterName\": \"${CLUSTER_NAME}\",
 \"namespace\": \"${NAMESPACE}\",
-\"storageClassName\": \"dind-local-volumes-${HELM_RELEASE}\",
+\"storageClassName\": \"dind-local-volumes-venona-${NAMESPACE}\",
 \"agent\": true
 }"
 
@@ -157,7 +157,6 @@ else
 fi
 
 echo -e "\n------------------\nGenerating server tls certificates ... "
-### TODO - check by kubectl if codefresh-certs-server exists
 
 SERVER_CERT_CN=${SERVER_CERT_CN:-"docker.codefresh.io"}
 ###
@@ -191,3 +190,36 @@ SERVER_CERT_CN=${SERVER_CERT_CN:-"docker.codefresh.io"}
   fi
   unzip -o -d ${CERTS_DIR}/  ${TMP_CERTS_FILE_ZIP} || fatal "Failed to unzip certificates to ${CERTS_DIR} "
   cp -v ${CF_SRV_TLS_CERT} $SRV_TLS_CERT || fatal "received ${TMP_CERTS_FILE_ZIP} does not contains cf-server-cert.pem"
+
+echo "BASE64 ca: "
+base64 -i ./tmp/codefresh/certs-tmp/cf-ca.pem
+
+echo "BASE64 cert: "
+base64 -i ./tmp/codefresh/certs-tmp/cf-server-cert.pem
+
+echo "BASE64 key: "
+base64 -i ./tmp/codefresh/certs-tmp/server-key.pem
+
+# Generating Runner Token
+
+echo "Generating Runner Token"
+
+TOKEN_NAME=$(echo codefresh-runner-$(date '+%Y%m%d%H%M%S'))
+
+jq -n '{name: $TOKEN_NAME}' --arg TOKEN_NAME "${TOKEN_NAME}"  > ${TMPDIR}/token-data.json
+
+echo "Agent Token: "
+
+AGENT_TOKEN=$(curl -X POST \
+  "${API_HOST}/api/auth/key?subjectType=runtime-environment&subjectReference=${CLUSTER_NAME}/${NAMESPACE}" \
+  -H "Authorization: Bearer ${API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d @${TMPDIR}/token-data.json)
+
+echo "Agent Token: "
+
+echo ${AGENT_TOKEN}
+
+echo "Update values.yaml with values above or use --set for the values"
+
+echo "Example Helm Command: helm upgrade --install --namespace ${NAMESPACE} ${HELM_RELEASE} ./codefresh-runner"

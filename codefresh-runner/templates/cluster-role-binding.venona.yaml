@@ -1,13 +1,11 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  #name: {{APP_NAME}}-{{NAMESPACE}}
-  name: {{ template "fullname" . }}
+  name: {{ .Values.app }}-{{ .Release.Namespace }}
 subjects:
 - kind: ServiceAccount
-  #name: {{APP_NAME}}
-  name: {{ template "fullname" . }}
-  #namespace: {{NAMESPACE}}
+  name: {{ .Values.app }}
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: system:discovery

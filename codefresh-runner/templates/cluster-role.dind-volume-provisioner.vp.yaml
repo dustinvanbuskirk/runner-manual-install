@@ -1,11 +1,9 @@
 kind: ClusterRole
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  #name: volume-provisioner-{{ .AppName }}-{{ .Namespace }}
-  name: {{ template "fullname" . }}-dind-volume-provisioner
+  name: volume-provisioner-{{ .Values.app }}-{{ .Release.Namespace }}
   labels:
-    #app: dind-volume-provisioner
-    app: {{ template "fullname" . }}-dind-volume-provisioner
+    app: dind-volume-provisioner
 rules:
   - apiGroups: [""]
     resources: ["persistentvolumes"]

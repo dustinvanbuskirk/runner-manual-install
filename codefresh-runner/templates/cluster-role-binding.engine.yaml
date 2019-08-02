@@ -1,13 +1,11 @@
 kind: ClusterRoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  #name: {{ .AppName }}-{{ .Namespace }}-engine
-  name: {{ template "fullname" . }}-engine
+  name: {{ .Values.app }}-{{ .Release.Namespace }}-engine
 subjects:
 - kind: ServiceAccount
-  #name: engine
-  name: {{ template "fullname" . }}-engine
-  #namespace: {{ .Namespace }}
+  name: engine
+  namespace: {{ .Release.Namespace }}
 roleRef:
   kind: ClusterRole
   name: cluster-admin

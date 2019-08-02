@@ -3,13 +3,15 @@
 # Declare name/value pairs to be passed into your templates.
 # name: value
 
+app: venona
+
 runner:
   image: 
     repository: codefresh/venona
     tag: 0.24.0
   api:
     host: https://g.codefresh.io
-    token: # Create token here: https://g.codefresh.io/user/settings or https://codefresh-io.github.io/cli/tokens/create-tokens/
+    token: 
   clusterName: docker-in-docker
   certificate:
     # base64 encoded values only
@@ -18,42 +20,7 @@ runner:
     key: 
   mode: InCluster
 
-
 volume:
   image:
     repository: codefresh/dind-volume-provisioner
     tag: v13
-
-
-#export APP_NAME=venona
-#{{ template "fullname" . }}
-#export NAMESPACE=default
-#{{ .Release.Namespace }}
-#export CLUSTER_NAME=my-cluster
-#
-#export API_TOKEN=5d4005badbb93850c1db7dsg345fggdfgcd7f71c6a246666182d
-# {{ .Values.runner.api.token | b64enc }}
-#export API_HOST=https://g.codefresh.io
-# {{ .Values.runner.api.host }}
-#export VOLUME_IMAGE_NAME=codefresh/dind-volume-provisioner
-# {{ .Values.volume.image.repository }}
-#export VOLUME_IMAGE_TAG=v13
-# {{ .Values.volume.image.tag }}
-#export VERSION=1.0.0
-# Reusing for versioning
-# {{ .Values.runner.image.tag }}
-#export MODE=InCluster
-# {{ .Values.runner.mode }}
-#export IMAGE_NAME=codefresh/venona
-# {{ .Values.runner.image.repository }}
-#export IMAGE_TAG=0.24.0
-# {{ .Values.runner.image.tag }}
-
-# Key Creation
-#/Users/dustinvanbuskirk/src/dustinvanbuskirk/runner-manual-install/codefresh-runner/templates/codefresh-certs-server-secret.re.yml
-#  server-cert.pem: {{SERVER_CERT_CERT}}
-# {{ .Values.runner.certificate.cert | b64enc }}
-#  server-key.pem: {{SERVER_CERT_KEY}}
-# {{ .Values.runner.certificate.key | b64enc }}
-#  ca.pem: {{SERVER_CERT_CA}}
-# {{ .Values.runner.certificate.ca | b64enc }}
