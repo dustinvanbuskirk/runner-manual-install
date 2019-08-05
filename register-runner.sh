@@ -164,7 +164,8 @@ SERVER_CERT_CN=${SERVER_CERT_CN:-"docker.codefresh.io"}
   openssl genrsa -out $SRV_TLS_KEY 4096 || fatal "Failed to generate openssl key "
   openssl req -subj "/CN=${SERVER_CERT_CN}" -new -key $SRV_TLS_KEY -out $SRV_TLS_CSR  || fatal "Failed to generate openssl csr "
   GENERATE_CERTS=true
-  CSR=$(sed ':a;N;$!ba;s/\n/\\n/g' ${SRV_TLS_CSR})
+  
+  CSR=$(cat ./tmp/codefresh/certs-tmp/server-cert.csr)
 
   SERVER_CERT_SANS="IP:127.0.0.1,DNS:dind,DNS:*.dind.${NAMESPACE},DNS:*.dind.${NAMESPACE}.svc,DNS:*.cf-cd.com,DNS:*.codefresh.io"
   if [[ -n "${SERVER_CERT_EXTRA_SANS}" ]]; then
