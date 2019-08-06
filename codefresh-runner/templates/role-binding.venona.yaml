@@ -1,12 +1,12 @@
 kind: RoleBinding
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: {{APP_NAME}}
-  namespace: {{NAMESPACE}}
+  name: {{ .Values.app }}
+  namespace: {{ .Release.Namespace }}
 subjects:
 - kind: ServiceAccount
-  name: {{APP_NAME}}
+  name: {{ .Values.app }}
 roleRef:
   kind: Role
-  name: {{APP_NAME}}
+  name: {{ .Values.app }}
   apiGroup: rbac.authorization.k8s.io

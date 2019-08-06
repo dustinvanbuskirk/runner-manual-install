@@ -1,0 +1,4 @@
+apiVersion: v1
+description: A Helm chart to install Codefresh Runner behind-the-firewall
+name: codefresh-runner
+version: 1.0.0

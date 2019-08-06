@@ -1,8 +1,8 @@
 kind: Role
 apiVersion: rbac.authorization.k8s.io/v1beta1
 metadata:
-  name: {{APP_NAME}}
-  namespace: {{NAMESPACE}}
+  name: {{ .Values.app }}
+  namespace: {{ .Release.Namespace }}
 rules:
 - apiGroups: [""]
   resources: ["pods", "persistentvolumeclaims"]

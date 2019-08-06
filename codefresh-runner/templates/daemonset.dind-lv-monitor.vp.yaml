@@ -1,8 +1,8 @@
 apiVersion: extensions/v1beta1
 kind: DaemonSet
 metadata:
-  name: dind-lv-monitor-{{APP_NAME}}
-  namespace: {{NAMESPACE}}
+  name: dind-lv-monitor-{{ .Values.app }}
+  namespace: {{ .Release.Namespace}}
   labels:
     app: dind-lv-monitor
 spec:
@@ -14,7 +14,7 @@ spec:
         prometheus_port: "9100"
         prometheus_scrape: "true"
     spec:
-      serviceAccountName: volume-provisioner-{{APP_NAME}}
+      serviceAccountName: volume-provisioner-{{ .Values.app }}
       # Debug:       
       # hostNetwork: true
       # nodeSelector:

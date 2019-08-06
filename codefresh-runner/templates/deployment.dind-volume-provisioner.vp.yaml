@@ -1,8 +1,8 @@
 apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
-  name: dind-volume-provisioner-{{APP_NAME}}
-  namespace: {{NAMESPACE}}
+  name: dind-volume-provisioner-{{ .Values.app }}
+  namespace: {{ .Release.Namespace }}
   labels:
     app: dind-volume-provisioner
 spec:
@@ -14,14 +14,14 @@ spec:
       labels:
         app: dind-volume-provisioner
     spec:
-      serviceAccount: volume-provisioner-{{APP_NAME}}
+      serviceAccount: volume-provisioner-{{ .Values.app }}
       tolerations:
       - effect: NoSchedule
         key: node-role.kubernetes.io/master
         operator: "Exists"
       containers:
       - name: dind-volume-provisioner
-        image: {{VOLUME_IMAGE_NAME}}:{{VOLUME_IMAGE_TAG}}
+        image: {{ .Values.volume.image.repository}}:{{ .Values.volume.image.tag }}
         imagePullPolicy: Always
         resources:
           requests:
@@ -36,5 +36,5 @@ spec:
           - --resync-period=50s          
         env:
         - name: PROVISIONER_NAME
-          value: codefresh.io/dind-volume-provisioner-{{APP_NAME}}-{{NAMESPACE}}
+          value: codefresh.io/dind-volume-provisioner-{{ .Values.app }}-{{ .Release.Namespace }}
        

@@ -2,10 +2,10 @@ apiVersion: extensions/v1beta1
 kind: Deployment
 metadata:
   labels:
-    app: {{APP_NAME}}
-    version: {{VERSION}}
-  name: {{APP_NAME}}
-  namespace: {{NAMESPACE}}
+    app: {{ .Values.app }}
+    version: {{ .Values.runner.image.tag | quote }}
+  name: {{ .Values.app }}
+  namespace: {{ .Release.Namespace }}
 spec:
   replicas: 1
   revisionHistoryLimit: 5
@@ -17,10 +17,10 @@ spec:
   template:
     metadata:
       labels:
-        app: {{APP_NAME}}
-        version: {{VERSION}}
+        app: {{ .Values.app }}
+        version: {{ .Values.runner.image.tag | quote }}
     spec:
-      serviceAccountName: {{APP_NAME}}
+      serviceAccountName: {{ .Values.app }}
       containers:
       - env:
         - name: SELF_DEPLOYMENT_NAME
@@ -30,15 +30,15 @@ spec:
         - name: CODEFRESH_TOKEN
           valueFrom:
             secretKeyRef:
-              name: {{APP_NAME}}
+              name: {{ .Values.app }}
               key: codefresh.token
         - name: CODEFRESH_HOST
-          value: {{API_HOST}}
+          value: {{ .Values.runner.api.host }}
         - name: AGENT_MODE
-          value: {{MODE}}
+          value: {{ .Values.runner.mode}}
         - name: AGENT_NAME
-          value: {{APP_NAME}}
-        image: {{IMAGE_NAME}}:{{IMAGE_TAG}}
+          value: {{ .Values.app }}
+        image: {{ .Values.runner.image.repository }}:{{ .Values.runner.image.tag }}
         imagePullPolicy: Always
-        name: {{APP_NAME}}
+        name: {{ .Values.app }}
       restartPolicy: Always

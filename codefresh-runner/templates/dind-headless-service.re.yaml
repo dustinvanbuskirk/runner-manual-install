@@ -5,7 +5,7 @@ metadata:
   labels:
     app: dind
   name: dind
-  namespace: {{ .Namespace }}
+  namespace: {{ .Release.Namespace }}
 spec:
   ports:
   - name: "dind-port"

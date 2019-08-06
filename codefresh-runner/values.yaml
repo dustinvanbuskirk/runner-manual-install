@@ -1,0 +1,26 @@
+# Default values for codefresh-runner.
+# This is a YAML-formatted file.
+# Declare name/value pairs to be passed into your templates.
+# name: value
+
+app: venona
+
+runner:
+  image: 
+    repository: codefresh/venona
+    tag: 0.24.0
+  api:
+    host: https://g.codefresh.io
+    token: 
+  clusterName: docker-in-docker
+  certificate:
+    # base64 encoded values only
+    ca: 
+    cert: 
+    key: 
+  mode: InCluster
+
+volume:
+  image:
+    repository: codefresh/dind-volume-provisioner
+    tag: v13

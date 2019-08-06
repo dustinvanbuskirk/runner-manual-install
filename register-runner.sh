@@ -1,6 +1,10 @@
 #!/usr/bin/env bash
 #
 
+# Usage
+# chmod +x ./create-certs.sh
+# ./create-certs.sh --api-token --api-host https://g.codefresh.io 
+
 #---
 fatal() {
    echo "ERROR: $1"
@@ -18,19 +22,32 @@ exit_trap () {
 }
 trap exit_trap EXIT
 
-# Environment
-API_HOST=${API_HOST}
-
 
 # Args
-while [[ $1 =~ ^(-(t)|--(token|server-cert-cn|server-cert-extra-sans)) ]]
+while [[ $1 =~ ^(-(h|t|c|n|r)|--(api-host|api-token|cluster-name|namespace|helm-release|server-cert-cn|server-cert-extra-sans)) ]]
 do
   key=$1
   value=$2
 
   case $key in
+    -h|--api-host)
+        API_HOST="$value"
+        shift
+      ;;
     -t|--api-token)
         API_TOKEN="$value"
+        shift
+      ;;
+    -c|--cluster-name)
+        CLUSTER_NAME="$value"
+        shift
+      ;;
+    -n|--namespace)
+        NAMESPACE="$value"
+        shift
+      ;;
+    -r|--helm-release)
+        HELM_RELEASE="$value"
         shift
       ;;
     --server-cert-cn)
@@ -45,21 +62,28 @@ do
   shift # past argument or value
 done
 
+echo $NAMESPACE
+echo $CLUSTER_NAME
+
 API_VALIDATE_PATH=${SIGN_VALIDATE_PATH:-"api/custom_clusters/validate"}
 API_SIGN_PATH=${API_SIGN_PATH:-"api/custom_clusters/signServerCerts"}
-API_REGISTER_PATH=${API_REGISTER_PATH:-"api/custom_clusters/register"}
-API_TOKEN=${API_TOKEN}
+HELM_RELEASE=${HELM_RELEASE:-"codefresh-runner"}
+# API_HOST=${API_HOST}
+# API_TOKEN=${API_TOKEN}
+# CLUSTER_NAME=${CLUSTER_NAME}
+# NAMESPACE=${NAMESPACE}
 SERVER_CERT_CN="${SERVER_CERT_CN}"
 SERVER_CERT_EXTRA_SANS="${SERVER_CERT_EXTRA_SANS}"
 
-[[ -z "$API_TOKEN" ]] && fatal "Missing token"
-[[ -z "$API_HOST" ]] && fatal "Missing API_HOST"
+[[ -z "$API_TOKEN" ]] && fatal "Missing API Token"
+[[ -z "$API_HOST" ]] && fatal "Missing API Host"
+[[ -z "$CLUSTER_NAME" ]] && fatal "Missing Kubernetes Cluster Name"
+[[ -z "$NAMESPACE" ]] && fatal "Missing Kubernetes Namespace"
 
 NAMESPACE=${NAMESPACE:-default}
 
-export APP_NAME=venona
 DIR=$(dirname $0)
-TMPDIR=./tmp/codefresh/
+TMPDIR=./tmp/codefresh
 TMP_VALIDATE_RESPONSE_FILE=$TMPDIR/validate-response
 TMP_VALIDATE_HEADERS_FILE=$TMPDIR/validate-headers.txt
 
@@ -105,9 +129,34 @@ echo "CF_REGISTRY_USER=$CF_REGISTRY_USER"
 
 [[ -z "$CF_REGISTRY_DOMAIN" ]] && fatal "Validation failed - cannot get CF_REGISTRY_DOMAIN"
 
+API_REGISTER_PATH=${API_REGISTER_PATH:-"api/custom_clusters/register"}
+
+# Register Runner
+echo -e "\n------------------\nRegistering Runtime ... "
+REGISTER_DATA=\
+"{\"clusterName\": \"${CLUSTER_NAME}\",
+\"namespace\": \"${NAMESPACE}\",
+\"storageClassName\": \"dind-local-volumes-venona-${NAMESPACE}\",
+\"agent\": true
+}"
+
+echo "${REGISTER_DATA}" > ${TMPDIR}/register_data.json
+
+rm -f ${TMPDIR}/register.out ${TMPDIR}/register_response_headers.out
+REGISTER_STATUS=$(curl -sSL -d @${TMPDIR}/register_data.json -H "Content-Type: application/json" -H "authorization: ${API_TOKEN}" \
+    -o ${TMPDIR}/register.out -D ${TMPDIR}/register_response_headers.out -w '%{http_code}' ${API_HOST}/${API_REGISTER_PATH} )
+
+echo "Registration request completed with HTTP_STATUS_CODE=$REGISTER_STATUS"
+if [[ $REGISTER_STATUS == 200 ]]; then
+ echo -e "Cluster Namespace has been successfully registered with Codefresh\n------"
+else
+ echo "ERROR: Failed to register cluster node with Codefresh"
+ [[ -f ${TMPDIR}/register.out ]] && cat ${TMPDIR}/register.out
+ echo -e "\n----\n"
+ exit 1
+fi
 
 echo -e "\n------------------\nGenerating server tls certificates ... "
-### TODO - check by kubectl if codefresh-certs-server exists
 
 SERVER_CERT_CN=${SERVER_CERT_CN:-"docker.codefresh.io"}
 ###
@@ -115,13 +164,17 @@ SERVER_CERT_CN=${SERVER_CERT_CN:-"docker.codefresh.io"}
   openssl genrsa -out $SRV_TLS_KEY 4096 || fatal "Failed to generate openssl key "
   openssl req -subj "/CN=${SERVER_CERT_CN}" -new -key $SRV_TLS_KEY -out $SRV_TLS_CSR  || fatal "Failed to generate openssl csr "
   GENERATE_CERTS=true
-  CSR=$(sed ':a;N;$!ba;s/\n/\\n/g' ${SRV_TLS_CSR})
+  
+  CSR=$(cat ./tmp/codefresh/certs-tmp/server-cert.csr)
 
-  SERVER_CERT_SANS="IP:127.0.0.1,DNS:dind,DNS:*.dind.${NAMESPACE},DNS:*.dind.${NAMESPACE}.svc${KUBE_DOMAIN},DNS:*.cf-cd.com,DNS:*.codefresh.io"
+  SERVER_CERT_SANS="IP:127.0.0.1,DNS:dind,DNS:*.dind.${NAMESPACE},DNS:*.dind.${NAMESPACE}.svc,DNS:*.cf-cd.com,DNS:*.codefresh.io"
   if [[ -n "${SERVER_CERT_EXTRA_SANS}" ]]; then
     SERVER_CERT_SANS=${SERVER_CERT_SANS},${SERVER_CERT_EXTRA_SANS}
   fi
-  echo "{\"reqSubjectAltName\": \"${SERVER_CERT_SANS}\", \"csr\": \"${CSR}\" }" > ${TMPDIR}/sign_req.json
+  echo ${SERVER_CERT_SANS}
+  echo ${CSR}
+  jq -n '{reqSubjectAltName: $SERVER_CERT_SANS, csr: $CSR}' --arg CSR "${CSR}" --arg SERVER_CERT_SANS "${SERVER_CERT_SANS}" > ${TMPDIR}/sign_req.json
+  #echo "{\"reqSubjectAltName\": \"${SERVER_CERT_SANS}\", \"csr\": \"${CSR}\" }" > ${TMPDIR}/sign_req.json
 
   rm -fv ${TMP_CERTS_HEADERS_FILE} ${TMP_CERTS_FILE_ZIP}
   SIGN_STATUS=$(curl -sSL -d @${TMPDIR}/sign_req.json -H "Content-Type: application/json" -H "authorization: ${API_TOKEN}" -H "Expect: " \
@@ -139,51 +192,35 @@ SERVER_CERT_CN=${SERVER_CERT_CN:-"docker.codefresh.io"}
   unzip -o -d ${CERTS_DIR}/  ${TMP_CERTS_FILE_ZIP} || fatal "Failed to unzip certificates to ${CERTS_DIR} "
   cp -v ${CF_SRV_TLS_CERT} $SRV_TLS_CERT || fatal "received ${TMP_CERTS_FILE_ZIP} does not contains cf-server-cert.pem"
 
+echo "BASE64 ca: "
+base64 -i ./tmp/codefresh/certs-tmp/cf-ca.pem
 
-  if kubectl get secret "${K8S_CERT_SECRET_NAME}"; then
-     kubectl delete secret "${K8S_CERT_SECRET_NAME}"
-  fi
-  kubectl create secret generic $K8S_CERT_SECRET_NAME \
-      --from-file=$SRV_TLS_KEY \
-      --from-file=$SRV_TLS_CERT || fatal "Failed storing the generated certificates in Kubernetes!"
+echo "BASE64 cert: "
+base64 -i ./tmp/codefresh/certs-tmp/cf-server-cert.pem
 
-## Secrets
-export API_TOKEN_BASE64=$(echo -n ${API_TOKEN}|base64)
+echo "BASE64 key: "
+base64 -i ./tmp/codefresh/certs-tmp/server-key.pem
 
-## Apply assets/*yml
-mkdir ${TMPDIR}manifests/
-echo -e "\n------------------\nApply kubernetes asset templates ... "
-for ii in $(find ${DIR}/assets -type f -name "*.yaml")
-do
-   echo -e "\nkubectl apply -f $ii"
-   ASSET_YAML=${TMPDIR}manifests/$(basename $ii)
-   ${DIR}/template.sh $ii > ${ASSET_YAML}
-   # cat $ASSET_YAML
-   kubectl apply -f $ASSET_YAML || fatal "failed to apply $ii "
+# Generating Runner Token
 
-   echo "-------"
-done
+echo "Generating Runner Token"
 
+TOKEN_NAME=$(echo codefresh-runner-$(date '+%Y%m%d%H%M%S'))
 
-echo -e "\n------------------\nRegistering Cluster Namespace ... "
-REGISTER_DATA=\
-"{\"clusterName\": \"${CLUSTER_NAME}\",
-\"namespace\": \"${NAMESPACE}\"
-}"
+jq -n '{name: $TOKEN_NAME}' --arg TOKEN_NAME "${TOKEN_NAME}"  > ${TMPDIR}/token-data.json
 
-echo "${REGISTER_DATA}" > ${TMPDIR}/register_data.json
+echo "Agent Token: "
 
-rm -f ${TMPDIR}/register.out ${TMPDIR}/register_response_headers.out
-REGISTER_STATUS=$(curl -sSL -d @${TMPDIR}/register_data.json -H "Content-Type: application/json" -H "authorization: ${API_TOKEN}" \
-    -o ${TMPDIR}/register.out -D ${TMPDIR}/register_response_headers.out -w '%{http_code}' ${API_HOST}/${API_REGISTER_PATH} )
+AGENT_TOKEN=$(curl -X POST \
+  "${API_HOST}/api/auth/key?subjectType=runtime-environment&subjectReference=${CLUSTER_NAME}/${NAMESPACE}" \
+  -H "Authorization: Bearer ${API_TOKEN}" \
+  -H "Content-Type: application/json" \
+  -d @${TMPDIR}/token-data.json)
 
+echo "Agent Token: "
 
-echo "Registration request completed with HTTP_STATUS_CODE=$REGISTER_STATUS"
-if [[ $REGISTER_STATUS == 200 ]]; then
- echo -e "Cluster Namespace has been successfully registered with Codefresh\n------"
-else
- echo "ERROR: Failed to register cluster node with Codefresh"
- [[ -f ${TMPDIR}/register.out ]] && cat ${TMPDIR}/register.out
- echo -e "\n----\n"
- exit 1
-fi
+echo ${AGENT_TOKEN}
+
+echo "Update values.yaml with values above or use --set for the values"
+
+echo "Example Helm Command: helm upgrade --install --namespace ${NAMESPACE} ${HELM_RELEASE} ./codefresh-runner"
